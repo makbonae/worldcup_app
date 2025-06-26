@@ -1,0 +1,402 @@
+능력동사_ver.2025
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const SUPABASE_URL = 'https://nsfmxmtphiphxevfueua.supabase.co'; // 복사한 URL
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZm14bXRwaGlwaHhldmZ1ZXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MzcyNDgsImV4cCI6MjA2NjUxMzI0OH0.N5w7lrlujJq0Jb_CliL0DRqitv3U0TZwyK7s2IcF1NE'; // 복사한 anon key
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function saveToSupabase(studentId, studentName, roundNum, final, finals, semis, quarters) {
+      const { data, error } = await supabase.from('responses').insert([
+        {
+          student_id: studentId,
+          student_name: studentName,
+          round_num: roundNum,
+          final,
+          finals: finals.join(","),
+          semis: semis.join(","),
+          quarters: quarters.join(",")
+        }
+      ]);
+
+      if (error) {
+        console.error('Supabase 저장 오류:', error.message);
+      } else {
+        console.log('Supabase 저장 성공:', data);
+      }
+    }
+
+  </script>
+
+  <meta charset="UTF-8">
+  <title>이상형 월드컵</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      text-align: center;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    #inputForm, #instruction, #tournament, #resultArea, #roundNotice {
+      display: none;
+      margin-top: 50px;
+    }
+    .input-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 200px;
+    }
+    .input-container input, .input-container button {
+      height: 48px;
+      font-size: 18px;
+      padding: 0 12px;
+    }
+    .button {
+      font-size: 24px;
+      padding: 12px 24px;
+      margin: 10px;
+    }
+    .card {
+      display: inline-block;
+      width: 40%;
+      min-height: 160px;
+      margin: 2%;
+      border-radius: 20px;
+      background: white;
+      border: 4px solid #ccc;
+      cursor: pointer;
+      padding: 20px;
+      vertical-align: top;
+    }
+    .word {
+      font-size: 72px;
+      color: purple;
+      font-weight: 600;
+    }
+    .desc {
+      font-size: 24px;
+      color: blue;
+      font-weight: 300;
+      max-width: 90%;
+      margin: 0 auto;
+      word-wrap: break-word;
+    }
+    .summary-table {
+      margin: 30px auto;
+      border-collapse: collapse;
+      font-size: 28px;
+      width: 80%;
+    }
+    .summary-table th, .summary-table td {
+      border: 2px solid #888;
+      padding: 12px;
+      text-align: center;
+    }
+    .round-title {
+      font-size: 32px;
+      color: hotpink;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    #overlayText {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      font-size: 28px;
+      font-weight: bold;
+      color: rgba(100, 100, 100, 0.4);
+      pointer-events: none;
+      z-index: 0;
+    }
+    #summaryHeader {
+      font-size: 32px;
+      font-weight: bold;
+      margin-top: 40px;
+    }
+    #loadingSpinner {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+    }
+    .spinner {
+      border: 16px solid #f3f3f3;
+      border-top: 16px solid pink;
+      border-radius: 50%;
+      width: 120px;
+      height: 120px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="overlayText">양정고등학교 진로 수업</div>
+
+  <div id="inputForm">
+    <div class="input-container">
+      <label style="font-size:24px;">학번: <input id="studentId" type="text"></label>
+      <label style="font-size:24px;">이름: <input id="studentName" type="text"></label>
+      <button onclick="showInstructions()">다음</button>
+    </div>
+  </div>
+
+  <div id="instruction">
+    <p style="font-size: 36px; font-weight: bold; padding-left: 3em; text-align: left;">
+      ① <span style="color: darkviolet; font-weight: bold;">77개의 능력 동사</span> 중에서 <span style="color: hotpink; font-weight: bold;">무작위로 선택된 64개</span>의 단어가 쌍으로 제시됩니다.<br>
+      ② 각 쌍에서 <span style="color: hotpink; font-weight: bold;">더 자신있는 능력 동사</span>을 선택하세요.<br>
+      ③ 마지막에 최종 선택 결과가 표시됩니다.<br>
+      ④ <span style="color: hotpink; font-weight: bold;">최대 3번</span>까지 결과를 저장할 수 있습니다.<br>
+    </p>
+    <button class="button" onclick="startTournament()">시작</button>
+  </div>
+
+  <div id="roundNotice">
+    <div id="roundTitle" class="round-title" style="font-size:90px; margin-top:200px;"></div>
+    <button id="startRoundBtn" class="button" style="font-size:36px; padding:16px 32px;">start</button>
+  </div>
+
+  <div id="loadingSpinner">
+    <div class="spinner"></div>
+  </div>
+
+  <div id="tournament"></div>
+
+  <div id="resultArea">
+    <div id="summaryHeader"></div>
+    <button class="button" id="summaryBtn" onclick="showSummary()">결과보기</button>
+    <button class="button" id="nextRoundBtn" style="display:none;" onclick="nextRound()"> 결과 저장하고 한번 더</button>
+    <div id="summaryTree" style="margin-top: 40px;"></div>
+    <button class="button" id="pdfBtn" onclick="downloadPDF()" style="display:none;">PDF 저장</button>
+  </div>
+
+  <script>
+    let currentRoundNum = 1;
+    const totalRounds = 3;
+    let results = [];
+    let wordPairs = [], roundData = [], history = [], currentRound = 64;
+    let newRound = [], currentPairIndex = 0;
+    let finalStages = { 8: [], 4: [], 2: [], 1: null };
+    let selectedByRound = { 8: [], 4: [], 2: [], 1: [] };
+
+    function showInstructions() {
+      document.getElementById("inputForm").style.display = "none";
+      document.getElementById("instruction").style.display = "block";
+    }
+
+    function startTournament() {
+      google.script.run.withSuccessHandler(data => setupRound(data)).getWordPairs();
+    }
+
+    function setupRound(pairs) {
+      wordPairs = pairs;
+      roundData = [...wordPairs];
+      history = [];
+      currentRound = 64;
+      selectedByRound = { 8: [], 4: [], 2: [], 1: [] };
+      finalStages = { 8: [], 4: [], 2: [], 1: null };
+      document.getElementById("instruction").style.display = "none";
+      playRound();
+    }
+
+    function playRound() {
+      if (roundData.length === 1) {
+        finalStages[1] = roundData[0].map(v => v);
+        selectedByRound[1] = [roundData[0][0]];
+        document.getElementById("tournament").style.display = "none";
+        document.getElementById("roundNotice").style.display = "none";
+        document.getElementById("resultArea").style.display = "block";
+
+        document.getElementById("summaryBtn").style.display = "inline-block";
+        document.getElementById("pdfBtn").style.display = "none";
+        document.getElementById("nextRoundBtn").style.display =
+          currentRoundNum < totalRounds ? "inline-block" : "none";
+
+        return;
+      }
+
+      if ([8, 4, 2].includes(roundData.length)) {
+        finalStages[roundData.length] = roundData.map(item => item[0]);
+      }
+
+      newRound = [];
+      currentPairIndex = 0;
+      showRoundNotice(roundData.length);
+    }
+
+    function showRoundNotice(roundSize) {
+      document.getElementById("tournament").style.display = "none";
+      document.getElementById("roundNotice").style.display = "block";
+      
+      // "2강"을 "결승"으로 표시
+      document.getElementById("roundTitle").innerText =
+        roundSize === 2 ? "결승" : `${roundSize}강`;
+
+      document.getElementById("startRoundBtn").onclick = () => {
+        document.getElementById("roundNotice").style.display = "none";
+        document.getElementById("loadingSpinner").style.display = "block";
+
+        setTimeout(() => {
+          document.getElementById("loadingSpinner").style.display = "none";
+          document.getElementById("tournament").style.display = "block";
+          showNextPair();
+        }, 1000);
+      };
+    }
+
+    function showNextPair() {
+      const container = document.getElementById("tournament");
+      const roundTitle = (roundData.length === 2) ? "결승" : `${roundData.length}강`;
+      container.innerHTML = `<h2 style="font-size:32px; color:hotpink;">${roundTitle}</h2>`;
+
+      if (currentPairIndex >= roundData.length) {
+        roundData = [...newRound];
+        currentRound /= 2;
+        playRound();
+        return;
+      }
+
+      const pair = [roundData[currentPairIndex], roundData[currentPairIndex + 1]];
+      const div = document.createElement("div");
+
+      pair.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.onclick = () => {
+          newRound.push(item);
+          selectedByRound[currentRound] = [...(selectedByRound[currentRound] || []), item[0]];
+          history.push({ round: currentRound, pair, selected: item });
+          currentPairIndex += 2;
+          showNextPair();
+        };
+        card.innerHTML = `<div class="word">${item[0]}</div><div class="desc">${item[1]}</div>`;
+        div.appendChild(card);
+      });
+
+      container.appendChild(div);
+    }
+
+    function showSummary() {
+      document.getElementById("summaryBtn").style.display = "none";
+      const summaryTree = document.getElementById("summaryTree");
+      summaryTree.innerHTML = "";
+
+      const finalWord = selectedByRound[1][0];
+
+      // ⬇️ 이번 라운드 결과 객체 생성
+      const thisRoundResult = {
+        final: finalWord,
+        finals: finalStages[2].filter(w => !selectedByRound[2]?.includes(w)),
+        semis: finalStages[4].filter(w => !selectedByRound[4]?.includes(w)),
+        quarters: finalStages[8].filter(w => !selectedByRound[8]?.includes(w))
+      };
+
+      // ⬇️ 결과 배열에 저장
+      results.push(thisRoundResult);
+
+      // ⬇️ 사용자 정보
+      const studentId = document.getElementById("studentId").value.trim();
+      const studentName = document.getElementById("studentName").value.trim();
+      document.getElementById("summaryHeader").innerText = `▶ ${studentId} ${studentName} 님의 응답결과입니다.`;
+
+      // ✅ 정확한 라운드 번호 전달하여 저장 (currentRoundNum 사용)
+      google.script.run.saveRoundResult(
+        studentId,
+        studentName,
+        currentRoundNum,  // 현재 라운드 번호를 정확히 저장
+        thisRoundResult.final,
+        thisRoundResult.finals,
+        thisRoundResult.semis,
+        thisRoundResult.quarters
+      );
+
+      // ⬇️ 결과 테이블 표시
+      let summaryHTML = "";
+      for (let i = 0; i < results.length; i++) {
+        const round = results[i];
+        summaryHTML += `
+          <table class='summary-table'>
+            <tr><th colspan='2'>Round ${i + 1} 결과</th></tr>
+            <tr><th style="font-size:28px; color:blue; font-weight:bold;">최종 선택</th><td style="font-size:28px; color:hotpink; font-weight:bold;">${round.final}</td></tr>
+            <tr><th>결승 진출</th><td>${round.finals.join(" / ") || "-"}</td></tr>
+            <tr><th>4강 진출</th><td>${round.semis.join(" / ") || "-"}</td></tr>
+            <tr><th>8강 진출</th><td>${round.quarters.join(" / ") || "-"}</td></tr>
+          </table>`;
+      }
+
+      summaryTree.innerHTML = summaryHTML;
+
+      // ⬇️ 버튼 설정
+      if (currentRoundNum < totalRounds) {
+        document.getElementById("nextRoundBtn").style.display = "inline-block";
+        document.getElementById("pdfBtn").style.display = "none";
+      } else {
+        document.getElementById("nextRoundBtn").style.display = "none";
+        document.getElementById("pdfBtn").style.display = "inline-block";
+      }
+
+      saveToSupabase(
+        studentId,
+        studentName,
+        currentRoundNum,
+        thisRoundResult.final,
+        thisRoundResult.finals,
+        thisRoundResult.semis,
+        thisRoundResult.quarters
+      );
+
+    }
+
+    function nextRound() {
+      currentRoundNum++;
+      document.getElementById("resultArea").style.display = "none";
+      document.getElementById("summaryTree").innerHTML = "";
+      document.getElementById("nextRoundBtn").style.display = "none";
+      document.getElementById("pdfBtn").style.display = "none";
+      startTournament();
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const studentId = document.getElementById("studentId").value.trim();
+      const studentName = document.getElementById("studentName").value.trim();
+      const fileName = `${studentId}${studentName}님의 능력 동사 월드컵 결과.pdf`;
+
+      html2canvas(document.body, {
+        scale: 1.5,
+        useCORS: true,
+        backgroundColor: "#ffffff"
+      }).then(canvas => {
+        const imgData = canvas.toDataURL("image/jpeg", 1);
+        const pdf = new jsPDF({ unit: "mm", format: "a4" });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const ratio = canvas.width / canvas.height;
+        const imgHeight = pageWidth / ratio;
+        pdf.addImage(imgData, 'JPEG', 10, 10, pageWidth - 20, imgHeight);
+        pdf.save(fileName);
+      });
+    }
+
+    window.onload = () => {
+      document.getElementById("inputForm").style.display = "block";
+    };
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+</body>
+</html>
