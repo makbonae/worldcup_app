@@ -1,14 +1,16 @@
+능력동사_ver.2025
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    const SUPABASE_URL = 'https://nsfmxmtphiphxevfueua.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZm14bXRwaGlwaHhldmZ1ZXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MzcyNDgsImV4cCI6MjA2NjUxMzI0OH0.N5w7lrlujJq0Jb_CliL0DRqitv3U0TZwyK7s2IcF1NE';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_URL = 'https://nsfmxmtphiphxevfueua.supabase.co'; // 복사한 URL
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZm14bXRwaGlwaHhldmZ1ZXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MzcyNDgsImV4cCI6MjA2NjUxMzI0OH0.N5w7lrlujJq0Jb_CliL0DRqitv3U0TZwyK7s2IcF1NE'; // 복사한 anon key
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function saveToSupabase(studentId, studentName, roundNum, final, finals, semis, quarters) {
-      const { data, error } = await supabaseClient.from('responses').insert([
+      const { data, error } = await supabase.from('responses').insert([
         {
           student_id: studentId,
           student_name: studentName,
@@ -27,35 +29,118 @@
       }
     }
 
-    async function getWordPairsFromSupabase() {
-      const { data, error } = await supabaseClient.from('wordlist').select('*');
-      if (error) {
-        alert("단어 데이터를 불러오는 데 실패했습니다.");
-        console.error(error);
-        return [];
-      }
-      const shuffled = data.sort(() => Math.random() - 0.5).slice(0, 64);
-      const pairs = [];
-      for (let i = 0; i < shuffled.length; i += 2) {
-        if (shuffled[i + 1]) {
-          pairs.push([[shuffled[i].verb, shuffled[i].desc], [shuffled[i + 1].verb, shuffled[i + 1].desc]]);
-        }
-      }
-      return pairs;
-    }
-
-    function startTournament() {
-      const studentId = document.getElementById("studentId").value.trim();
-      const studentName = document.getElementById("studentName").value.trim();
-      if (!studentId || !studentName) {
-        alert("학번과 이름을 입력하세요.");
-        return;
-      }
-      document.getElementById("instruction").style.display = "none";
-      document.getElementById("roundNotice").style.display = "block";
-      getWordPairsFromSupabase().then(data => setupRound(data));
-    }
   </script>
+
+  <meta charset="UTF-8">
+  <title>이상형 월드컵</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      text-align: center;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    #inputForm, #instruction, #tournament, #resultArea, #roundNotice {
+      display: none;
+      margin-top: 50px;
+    }
+    .input-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 200px;
+    }
+    .input-container input, .input-container button {
+      height: 48px;
+      font-size: 18px;
+      padding: 0 12px;
+    }
+    .button {
+      font-size: 24px;
+      padding: 12px 24px;
+      margin: 10px;
+    }
+    .card {
+      display: inline-block;
+      width: 40%;
+      min-height: 160px;
+      margin: 2%;
+      border-radius: 20px;
+      background: white;
+      border: 4px solid #ccc;
+      cursor: pointer;
+      padding: 20px;
+      vertical-align: top;
+    }
+    .word {
+      font-size: 72px;
+      color: purple;
+      font-weight: 600;
+    }
+    .desc {
+      font-size: 24px;
+      color: blue;
+      font-weight: 300;
+      max-width: 90%;
+      margin: 0 auto;
+      word-wrap: break-word;
+    }
+    .summary-table {
+      margin: 30px auto;
+      border-collapse: collapse;
+      font-size: 28px;
+      width: 80%;
+    }
+    .summary-table th, .summary-table td {
+      border: 2px solid #888;
+      padding: 12px;
+      text-align: center;
+    }
+    .round-title {
+      font-size: 32px;
+      color: hotpink;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    #overlayText {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      font-size: 28px;
+      font-weight: bold;
+      color: rgba(100, 100, 100, 0.4);
+      pointer-events: none;
+      z-index: 0;
+    }
+    #summaryHeader {
+      font-size: 32px;
+      font-weight: bold;
+      margin-top: 40px;
+    }
+    #loadingSpinner {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+    }
+    .spinner {
+      border: 16px solid #f3f3f3;
+      border-top: 16px solid pink;
+      border-radius: 50%;
+      width: 120px;
+      height: 120px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
 
