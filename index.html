@@ -38,8 +38,10 @@
       const pairs = [];
       for (let i = 0; i < shuffled.length; i += 2) {
         if (shuffled[i + 1]) {
-          pairs.push([shuffled[i].verb, shuffled[i].desc]);
-          pairs.push([shuffled[i + 1].verb, shuffled[i + 1].desc]);
+          pairs.push([
+            [shuffled[i].verb, shuffled[i].desc],
+            [shuffled[i + 1].verb, shuffled[i + 1].desc]
+          ]);
         }
       }
       return pairs;
