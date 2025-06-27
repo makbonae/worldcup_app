@@ -1,0 +1,182 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>능력 동사 월드컵</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        #inputArea, #instruction, #tournament, #resultArea {
+            display: none;
+            margin-top: 50px;
+        }
+
+        .input-container {
+            margin-top: 150px;
+        }
+
+        .card {
+            display: inline-block;
+            width: 40%;
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="inputArea" class="input-container">
+        <label>학번: <input id="studentId"></label>
+        <label>이름: <input id="studentName"></label>
+        <button onclick="showInstructions()">다음</button>
+    </div>
+
+    <div id="instruction">
+        <p>① 이 게임은 이상형 월드컵 형식으로 진행됩니다.</p>
+        <p>② 선택하는 동사를 클릭해 다음 라운드로 진출시켜 주세요.</p>
+        <p>③ 3번까지 참여 가능하며 결과가 저장됩니다.</p>
+        <button onclick="startTournament()">시작</button>
+    </div>
+
+    <div id="tournament">
+        <h2 id="roundTitle"></h2>
+        <div id="matchArea"></div>
+    </div>
+
+    <div id="resultArea">
+        <h2>📊 선택 결과 요약</h2>
+        <table id="summaryTable"></table>
+    </div>
+
+    <script>
+const SUPABASE_URL = 'https://nsfmxmtphiphxevfueua.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZm14bXRwaGlwaHhldmZ1ZXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MzcyNDgsImV4cCI6MjA2NjUxMzI0OH0.N5w7lrlujJq0Jb_CliL0DRqitv3U0TZwyK7s2IcF1NE';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let studentId = '';
+let studentName = '';
+let allWords = [];
+let round = 1;
+let selected = [];
+
+document.getElementById("inputArea").style.display = "block";
+
+function showInstructions() {
+  studentId = document.getElementById("studentId").value.trim();
+  studentName = document.getElementById("studentName").value.trim();
+  if (!studentId || !studentName) return alert("학번과 이름을 입력해 주세요");
+  document.getElementById("inputArea").style.display = "none";
+  document.getElementById("instruction").style.display = "block";
+}
+
+async function startTournament() {
+  document.getElementById("instruction").style.display = "none";
+  document.getElementById("tournament").style.display = "block";
+  const { data, error } = await supabase.from('wordlist').select();
+  if (error) return alert("데이터 불러오기 실패");
+
+  allWords = shuffle(data).slice(0, 64);
+  playRound(allWords);
+}
+
+function playRound(list) {
+  document.getElementById("roundTitle").innerText = `${list.length}강`;
+  const matchArea = document.getElementById("matchArea");
+  matchArea.innerHTML = '';
+  let nextRound = [];
+
+  function nextMatch(index = 0) {
+    if (index >= list.length) {
+      if (list.length === 1) return showResult(list[0]);
+      playRound(nextRound);
+      return;
+    }
+
+    const [left, right] = [list[index], list[index + 1]];
+    matchArea.innerHTML = `
+      <div class="card" onclick="choose('${left.id}', ${index})">
+        <h3>${left.verb}</h3><p>${left.desc}</p>
+      </div>
+      <div class="card" onclick="choose('${right.id}', ${index + 1})">
+        <h3>${right.verb}</h3><p>${right.desc}</p>
+      </div>
+    `;
+
+    window.choose = (id, chosenIndex) => {
+      const winner = list[chosenIndex];
+      nextRound.push(winner);
+      nextMatch(index + 2);
+    };
+  }
+
+  nextMatch();
+}
+
+function showResult(winner) {
+  document.getElementById("tournament").style.display = "none";
+  document.getElementById("resultArea").style.display = "block";
+
+  const quarters = allWords.slice(0, 8).filter(w => w.id !== winner.id).map(w => w.verb);
+  const semis = allWords.slice(0, 4).filter(w => w.id !== winner.id).map(w => w.verb);
+  const finals = allWords.slice(0, 2).filter(w => w.id !== winner.id).map(w => w.verb);
+
+  const table = document.getElementById("summaryTable");
+  table.innerHTML = `
+    <tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>
+    <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>
+    <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>
+    <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>
+  `;
+
+  saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '));
+}
+
+async function saveResult(final, finals, semis, quarters) {
+  const { error } = await supabase.from('responses').insert([{
+    student_id: studentId,
+    student_name: studentName,
+    round_num: 1,
+    final,
+    finals,
+    semis,
+    quarters
+  }]);
+  if (error) alert("결과 저장 오류");
+}
+
+function shuffle(array) {
+  let arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+    </script>
+
+</body>
+</html>
