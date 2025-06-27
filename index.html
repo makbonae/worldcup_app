@@ -7,7 +7,10 @@
   <script>
     const SUPABASE_URL = 'https://nsfmxmtphiphxevfueua.supabase.co'; // 복사한 URL
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZm14bXRwaGlwaHhldmZ1ZXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MzcyNDgsImV4cCI6MjA2NjUxMzI0OH0.N5w7lrlujJq0Jb_CliL0DRqitv3U0TZwyK7s2IcF1NE'; // 복사한 anon key
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 
     async function saveToSupabase(studentId, studentName, roundNum, final, finals, semis, quarters) {
       const { data, error } = await supabase.from('responses').insert([
@@ -29,7 +32,7 @@
       }
     }
     async function getWordPairs() {
-      const { data, error } = await supabase.from('wordlist').select('*');
+      const { data, error } = await supabaseClient.from('wordlist').select('*');
       if (error) {
         console.error("단어 데이터를 불러오는 데 실패했습니다:", error);
         return [];
