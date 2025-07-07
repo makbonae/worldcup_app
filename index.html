@@ -1,4 +1,4 @@
-/ver2015-04
+/ver2015-05
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -404,10 +404,10 @@
             <div><span class="section-label">1. 전공 학과: </span>${d.major_ref}</div>
             <div><span class="section-label">2. 학과 개요: </span>${d.desc}</div>
             <div><span class="section-label">3. 유사 학과: </span>${d.friends}</div>
+            <div><span class="section-label">4. 개설 대학: </span>${d.sub3 || '정보 없음'}</div>
             <div class="section-divider">📖 관련 고등학교 선택 과목 예시</div>
-            <div><span class="section-label">4. 일반 선택 과목: </span>${d.sub1 || '정보 없음'}</div>
-            <div><span class="section-label">5. 진로 선택 과목: </span>${d.sub2 || '정보 없음'}</div>
-            <div><span class="section-label">6. 융합 선택 과목: </span>${d.sub3 || '정보 없음'}</div>
+            <div><span class="section-label">5. 일반 선택 과목: </span>${d.sub1 || '정보 없음'}</div>
+            <div><span class="section-label">6. 진로 선택 과목: </span>${d.sub2 || '정보 없음'}</div>            
           </div>
         `;
       });
