@@ -1,4 +1,4 @@
-/ver2015-01
+/ver2015-02
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -252,6 +252,7 @@
 
       function nextPair() {
         container.innerHTML = '';
+        
         if (index >= pairs.length) {
           // ✅ 라운드 이름 계산 로직 개선
           let nextRoundName = '';
@@ -267,12 +268,12 @@
             nextRoundName = `${count}강`; // 예외 처리
           }
 
-            showLoading(nextRoundName);
-            setTimeout(() => {
-              hideLoading();
-              playRound(nextRound);
-            }, 2000);
-            return;
+          showLoading(nextRoundName);
+          setTimeout(() => {
+            hideLoading();
+            playRound(nextRound);
+          }, 2000);
+          return;
         }
         
         const card1 = pairs[index];
