@@ -1,182 +1,460 @@
-﻿<!DOCTYPE html>
+/ver2015-01
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>능력 동사 월드컵</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-
-        #inputArea, #instruction, #tournament, #resultArea {
-            display: none;
-            margin-top: 50px;
-        }
-
-        .input-container {
-            margin-top: 150px;
-        }
-
-        .card {
-            display: inline-block;
-            width: 40%;
-            margin: 20px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            background: #fff;
-            cursor: pointer;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        table {
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>전공학과 월드컵</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-size: 24px;
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      background: #f9f9f9;
+    }
+    .input-container, .instruction, .category-select, .tournament, .result-area, .round-loading {
+      display: none;
+      margin-top: 50px;
+    }
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      height: 100vh;
+    }
+    .input-container input,
+    .input-container button {
+      width: 300px;
+      height: 48px;
+      font-size: 18px;
+      padding: 10px 16px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .category-select {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .bold-major {
+      font-weight: bold;
+      font-size: 48px;
+      color: black;
+    }
+    .friend-text {
+      font-size: 24px;
+      color: #007ACC;
+      margin-top: 30px;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      white-space: normal;
+      line-height: 1.5em;
+    }
+    .card {
+      display: inline-block;
+      width: 40%;
+      margin: 20px;
+      padding: 30px;
+      border: 2px solid #aaa;
+      border-radius: 10px;
+      background: white;
+      cursor: pointer;
+      vertical-align: top;
+    }
+    .card-pair {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      gap: 40px;
+      margin-bottom: 0px;
+    }
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #555;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: auto;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    table {
+      margin: auto;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    td, th {
+      border: 1px solid #ccc;
+      padding: 10px 10px;
+    }
+    button {
+      font-size: 24px;
+      margin: 10px;
+      padding: 10px 20px;
+    }
+    .circle-list {
+      list-style: none;
+      counter-reset: section;
+      padding-left: 0;
+    }
+    .circle-list li {
+      counter-increment: section;
+      position: relative;
+      padding-left: 1.5em; /* 리스트 번호 공간 확보 (여백 조정 가능) */
+      text-indent: 0;
+    }
+    .circle-list li::before {
+      content: counter(section, upper-roman) ".";
+      position: absolute;
+      left: 0;
+      width: 1.5em;        /* 번호 공간 확보 */
+      display: inline-block;
+    }
+    .highlight-doc {
+      color: #007ACC;
+    }
+  </style>
 </head>
 <body>
-
-    <div id="inputArea" class="input-container">
-        <label>학번: <input id="studentId"></label>
-        <label>이름: <input id="studentName"></label>
-        <button onclick="showInstructions()">다음</button>
+  <div class="input-container" id="inputForm">
+    <input id="school" placeholder="학교명">
+    <div style="height:10px"></div>
+    <input id="student_id" placeholder="학번">
+    <div style="height:10px"></div>
+    <input id="student_name" placeholder="이름">
+    <div style="height:10px"></div>
+    <button onclick="showInstruction()">다음</button>
+  </div>
+  <div class="instruction" id="instruction" style="max-width: 900px; margin: auto; text-align: left; line-height: 1.5em;">
+    <ul class="circle-list">
+      <li>본 프로그램은 대학 전공학과에 대한 관심 수준과 고등학교 과목 선택에 대한 이해를 돕기 위해 제작되었습니다.</li>
+      <li>서울시교육청교육정보원에서 발간한 <span class="highlight-doc">「2015 개정 교육과정 선택과목 안내서」</span>를 참고하였으며, 자세한 사항은 해당 자료를 참고하기 바랍니다.</li>
+      <li><span class="highlight-doc">[인문+공통], [자연+공통] 2개 카테고리 중에 하나를 선택</span>하여 전공학과 월드컵을 진행합니다.</li>
+      <li><span class="highlight-doc">공통 3개, 인문 36개, 자연 57개 학과로 구성</span>하였으며, [인문+공통]은 무작위로 선택된 32개 학과로 32강부터, [자연+공통]은 64강부터 시작하며 4개의 학과가 부전승으로 32강에 진출합니다.</li>
+      <li>두 개의 전공학과가 짝(pair)을 이루어 보여지면, <span class="highlight-doc">보다 관심이 있는 학과를 선택</span>하기 바랍니다.</li>
+      <li>2회까지 결과를 누적할 수 있고, <span class="highlight-doc">2번의 라운드를 마치면 선택한 전공 학과별로 고등학교 선택과목에 대한 안내</span>를 받아볼 수 있습니다.</li>
+      <li>준비가 되었다면 아래 계열을 선택하고 전공학과 이상형 월드컵을 시작하기 바랍니다.</li>
+    </ul>
+    <div class="category-select" style="justify-content: flex-start; margin-top: 20px;">
+      <button onclick="startCategory('inmun2024')">인문+공통</button>
+      <button onclick="startCategory('jayeon2024')">자연+공통</button>
     </div>
+  </div>
 
-    <div id="instruction">
-        <p>① 이 게임은 이상형 월드컵 형식으로 진행됩니다.</p>
-        <p>② 선택하는 동사를 클릭해 다음 라운드로 진출시켜 주세요.</p>
-        <p>③ 3번까지 참여 가능하며 결과가 저장됩니다.</p>
-        <button onclick="startTournament()">시작</button>
-    </div>
+  
+  <div class="round-loading" id="roundLoading">
+    <div class="spinner"></div>
+    <p id="roundText"></p>
+  </div>
+  
+  <div class="tournament" id="tournament"></div>
+  <div class="result-area" id="resultArea"></div>
+  <div id="repeatButton"></div>
+  <div id="pdfButton"></div>
 
-    <div id="tournament">
-        <h2 id="roundTitle"></h2>
-        <div id="matchArea"></div>
-    </div>
+  <script>
+    const SUPABASE_URL = 'https://vgnnzehkzbrsatdyoqzf.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnbm56ZWhremJyc2F0ZHlvcXpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNzUyNTksImV4cCI6MjA2Njk1MTI1OX0.ANWPKzugvztZLkYm5P9og9ENF-SG4QcTi9s1RBOO1DA';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <div id="resultArea">
-        <h2>📊 선택 결과 요약</h2>
-        <table id="summaryTable"></table>
-    </div>
+    let roundData = [];
+    let roundResults = [];
+    let roundHistory = [];
+    let currentRound = 1;
+    let maxRounds = 2;
+    let userInfo = {};
+    let selectedCategory = '';
 
-    <script>
-const SUPABASE_URL = 'https://nsfmxmtphiphxevfueua.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZm14bXRwaGlwaHhldmZ1ZXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MzcyNDgsImV4cCI6MjA2NjUxMzI0OH0.N5w7lrlujJq0Jb_CliL0DRqitv3U0TZwyK7s2IcF1NE';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    document.getElementById('inputForm').style.display = 'block';
 
-let studentId = '';
-let studentName = '';
-let allWords = [];
-let round = 1;
-let selected = [];
-
-document.getElementById("inputArea").style.display = "block";
-
-function showInstructions() {
-  studentId = document.getElementById("studentId").value.trim();
-  studentName = document.getElementById("studentName").value.trim();
-  if (!studentId || !studentName) return alert("학번과 이름을 입력해 주세요");
-  document.getElementById("inputArea").style.display = "none";
-  document.getElementById("instruction").style.display = "block";
-}
-
-async function startTournament() {
-  document.getElementById("instruction").style.display = "none";
-  document.getElementById("tournament").style.display = "block";
-  const { data, error } = await supabase.from('wordlist').select();
-  if (error) return alert("데이터 불러오기 실패");
-
-  allWords = shuffle(data).slice(0, 64);
-  playRound(allWords);
-}
-
-function playRound(list) {
-  document.getElementById("roundTitle").innerText = `${list.length}강`;
-  const matchArea = document.getElementById("matchArea");
-  matchArea.innerHTML = '';
-  let nextRound = [];
-
-  function nextMatch(index = 0) {
-    if (index >= list.length) {
-      if (list.length === 1) return showResult(list[0]);
-      playRound(nextRound);
-      return;
+    function showInstruction() {
+      userInfo.school = document.getElementById('school').value;
+      userInfo.id = document.getElementById('student_id').value;
+      userInfo.name = document.getElementById('student_name').value;
+      document.getElementById('inputForm').style.display = 'none';
+      document.getElementById('instruction').style.display = 'block';
     }
 
-    const [left, right] = [list[index], list[index + 1]];
-    matchArea.innerHTML = `
-      <div class="card" onclick="choose('${left.id}', ${index})">
-        <h3>${left.verb}</h3><p>${left.desc}</p>
-      </div>
-      <div class="card" onclick="choose('${right.id}', ${index + 1})">
-        <h3>${right.verb}</h3><p>${right.desc}</p>
-      </div>
-    `;
+    async function startCategory(table) {
+      selectedCategory = table;
+      document.getElementById('instruction').style.display = 'none';
+      document.getElementById('resultArea').style.display = 'none';
+      document.getElementById('repeatButton').style.display = 'none';
+      document.getElementById('pdfButton').style.display = 'none';
+      
+      // ✅ 시작 라운드 이름 지정
+      let startRoundName = '64강';
+      if (table === 'inmun2024') startRoundName = '32강';
+      showLoading(startRoundName);showLoading('64강');
 
-    window.choose = (id, chosenIndex) => {
-      const winner = list[chosenIndex];
-      nextRound.push(winner);
-      nextMatch(index + 2);
-    };
-  }
+      let { data, error } = await supabaseClient.from(table).select('*');
+      if (error) return alert('데이터 불러오기 실패');
 
-  nextMatch();
-}
+      data = shuffleArray(data);
+        
+      if (table === 'inmun2024') {
+        const selected = data.slice(0, 32);           // 전체 56개 사용
+        roundData = buildTournament(selected);
+        delete roundData.autoPass;
+      } else {
+        const selected = data.slice(0, 60);           // 전체 60개 사용
+        const autoPass = selected.slice(0, 4);        // 부전승 4개
+        const others = selected.slice(4);             // 나머지 56개로 64강 진행
+        roundData = buildTournament(others);          // 64강: 28쌍
+        roundData.autoPass = autoPass;                // 이후 32강에서 사용
+      }
 
-function showResult(winner) {
-  document.getElementById("tournament").style.display = "none";
-  document.getElementById("resultArea").style.display = "block";
+      setTimeout(() => {
+        hideLoading();
+        document.getElementById('tournament').style.display = 'block';
+        playRound(roundData);
+      }, 2000);
+    }
 
-  const quarters = allWords.slice(0, 8).filter(w => w.id !== winner.id).map(w => w.verb);
-  const semis = allWords.slice(0, 4).filter(w => w.id !== winner.id).map(w => w.verb);
-  const finals = allWords.slice(0, 2).filter(w => w.id !== winner.id).map(w => w.verb);
+    function shuffleArray(arr) {
+      return arr.sort(() => Math.random() - 0.5);
+    }
 
-  const table = document.getElementById("summaryTable");
-  table.innerHTML = `
-    <tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>
-    <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>
-    <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>
-    <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>
-  `;
+    function buildTournament(items) {
+      return shuffleArray(items);
+    }
 
-  saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '));
-}
 
-async function saveResult(final, finals, semis, quarters) {
-  const { error } = await supabase.from('responses').insert([{
-    student_id: studentId,
-    student_name: studentName,
-    round_num: 1,
-    final,
-    finals,
-    semis,
-    quarters
-  }]);
-  if (error) alert("결과 저장 오류");
-}
+    function playRound(pairs) {
+      const container = document.getElementById('tournament');
+      container.innerHTML = '';
 
-function shuffle(array) {
-  let arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-    </script>
+      if (pairs.length === 28 && roundData.autoPass) {
+        pairs = [...pairs, ...roundData.autoPass];
+        delete roundData.autoPass;
+      }
 
+      if (pairs.length === 1) {
+        saveRoundResult(pairs[0]);
+        showSummary();
+        return;
+      }
+
+      roundData = pairs;
+      roundHistory.push([...pairs]);
+      const nextRound = [];
+      let index = 0;
+
+      function nextPair() {
+        container.innerHTML = '';
+        if (index >= pairs.length) {
+          // ✅ 라운드 이름 계산 로직 개선
+          let nextRoundName = '';
+          const count = nextRound.length;
+
+          if (count === 1) {
+            nextRoundName = '최종 선택 결과';
+          } else if (count === 2) {
+            nextRoundName = '결승';
+          } else if ([4, 8, 16, 32, 64].includes(count)) {
+            nextRoundName = `${count}강`;
+          } else {
+            nextRoundName = `${count}강`; // 예외 처리
+          }
+
+            showLoading(nextRoundName);
+            setTimeout(() => {
+              hideLoading();
+              playRound(nextRound);
+            }, 2000);
+            return;
+          }
+        }
+        
+        const card1 = pairs[index];
+        const card2 = pairs[index + 1];
+        const cardA = createCard(card1);
+        const cardB = createCard(card2);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-pair';
+        wrapper.appendChild(cardA);
+        wrapper.appendChild(cardB);
+        container.appendChild(wrapper);
+
+        // ✅ 세로 길이만 동기화 (가로는 40% 고정)
+        setTimeout(() => {
+          const heightA = cardA.offsetHeight;
+          const heightB = cardB.offsetHeight;
+          const maxHeight = Math.max(heightA, heightB);
+          cardA.style.height = `${maxHeight}px`;
+          cardB.style.height = `${maxHeight}px`;
+        }, 0);
+
+        cardA.onclick = () => { nextRound.push(card1); index += 2; nextPair(); };
+        cardB.onclick = () => { nextRound.push(card2); index += 2; nextPair(); };
+      }
+      nextPair();
+    }
+
+    function createCard(item) {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `<div class='bold-major'>${item.major}</div><div class='friend-text'>${item.friends}</div>`;
+      return div;
+    }
+
+    function saveRoundResult(winner) {
+      const finals = roundHistory.at(-1)?.slice(0, 2) || [];
+      const semis = roundHistory.at(-2)?.slice(0, 4) || [];
+      const quarters = roundHistory.at(-3)?.slice(0, 8) || [];
+      roundResults.push({ final: winner, finals, semis, quarters });
+    }
+
+    function showSummary() {
+      document.getElementById('tournament').style.display = 'none';
+      const result = document.getElementById('resultArea');
+      result.style.display = 'block';
+      let html = `<p>${userInfo.school} ${userInfo.id} ${userInfo.name} 님의 선택 결과</p>`;
+      roundResults.forEach((round, idx) => {
+        const finals = round.finals.filter(x => x.major !== round.final.major);
+        const semis = round.semis.filter(x => !round.finals.includes(x));
+        const quarters = round.quarters.filter(x => !round.semis.includes(x));
+
+        html += `<h3>Round ${idx + 1}</h3><table><tr><th>구분</th><th>선택</th><th>전공</th>`;
+        html += `<tr><td>최종선택</td><td><input type='checkbox' class='desc-check' data-major='${round.final.major}'></td><td>${round.final.major}</td></tr>`;
+        finals.forEach(item => html += `<tr><td>결승진출</td><td><input type='checkbox' class='desc-check' data-major='${item.major}'></td><td>${item.major}</td></tr>`);
+        if (semis.length > 0) {
+          html += `<tr><td rowspan="1">4강진출</td>`;
+          semis.forEach(item => html += `<td><input type='checkbox' class='desc-check' data-major='${item.major}'></td><td>${item.major}</td>`);
+          html += `</tr>`;
+        }
+        if (quarters.length > 0) {
+          html += `<tr><td rowspan="1">8강진출</td>`;
+          quarters.forEach(item => html += `<td><input type='checkbox' class='desc-check' data-major='${item.major}'></td><td>${item.major}</td>`);
+          html += `</tr>`;
+        }
+        html += `</table>`;
+      });
+      result.innerHTML = html;
+
+      if (currentRound < maxRounds) {
+        document.getElementById('repeatButton').innerHTML = '<button onclick="repeatRound()">결과 저장하고 한 번 더!</button>';
+        document.getElementById('repeatButton').style.display = 'block';
+      } else {
+        document.getElementById('pdfButton').innerHTML = `
+          <p style="font-size: 20px; margin-bottom: 10px;">
+          ※ 관심 있는 전공 학과에 체크한 후 <strong>설명보기</strong> 버튼을 눌러보세요.<br>
+             (설명보기는 새 창에서 열리며, <strong>팝업 차단</strong>이 설정된 경우 보이지 않을 수 있습니다.<br>
+          👉 iPad 사용자: [설정] > [Safari] > [팝업 차단] 해제<br>
+          👉 Android 사용자: [Chrome 설정] > [사이트 설정] > [팝업 및 리디렉션] → 허용)
+          </p>
+          
+          <div>
+            <button onclick="downloadPDF()">PDF 저장</button>
+            <button onclick="openDescriptions()">설명보기</button>
+          </div>
+        `;
+        document.getElementById('pdfButton').style.display = 'block';
+      }
+    }
+
+    async function openDescriptions() {
+      const checked = document.querySelectorAll('.desc-check:checked');
+      const majors = Array.from(checked).map(cb => cb.dataset.major);
+      if (majors.length === 0) return alert('선택된 전공이 없습니다');
+
+      const { data, error } = await supabaseClient
+        .from(selectedCategory)
+        .select('*')
+        .in('major', majors);
+      if (error) return alert('설명 로딩 실패');
+
+      let htmlContent = `
+        <!DOCTYPE html>
+        <html lang="ko">
+        <head>
+          <meta charset="UTF-8">
+          <title>선택 학과 상세 설명</title>
+          <style>
+            body { font-family: sans-serif; font-size: 18px; padding: 20px; line-height: 2.0; }
+            .major-block { margin-bottom: 40px; }
+            .major-title { color: black; font-weight: bold; font-size: 24px; }
+            .section-label { color: black; font-weight: bold; }
+            .subject-label { color: black; font-weight: bold; }
+            .section-divider { color: dodgerblue; font-weight: bold; margin: 20px 0 10px; }
+            .print-button { margin-top: 40px; }
+          </style>
+        </head>
+        <body>
+          <p style="font-size: 24px; margin-bottom: 40px;">
+            <strong>${userInfo.school} ${userInfo.id} ${userInfo.name}</strong> 님의 선택한 전공 학과에 대한 안내입니다.
+          </p>
+      `;
+
+      data.forEach((d, i) => {
+        htmlContent += `
+          <div class="major-block">
+            <div class="major-title">🔖 선택 전공: ${d.major}</div>
+            <div><span class="section-label">1. 전공 학과: </span>${d.major_ref}</div>
+            <div><span class="section-label">2. 학과 개요: </span>${d.desc}</div>
+            <div><span class="section-label">3. 유사 학과: </span>${d.friends}</div>
+            <div class="section-divider">📖 관련 고등학교 선택 과목 예시</div>
+            <div><span class="section-label">4. 일반 선택 과목: </span>${d.sub1 || '정보 없음'}</div>
+            <div><span class="section-label">5. 진로 선택 과목: </span>${d.sub2 || '정보 없음'}</div>
+            <div><span class="section-label">6. 융합 선택 과목: </span>${d.sub3 || '정보 없음'}</div>
+          </div>
+        `;
+      });
+
+      htmlContent += `
+          <div class="print-button">
+            <button onclick="window.print()" style="font-size:18px; padding: 10px 20px;">📄 인쇄하기</button>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const win = window.open('', '_blank');
+      win.document.write(htmlContent);
+      win.document.close();
+    }
+
+
+    function downloadPDF() {
+      const element = document.getElementById('resultArea');
+      html2canvas(element).then(canvas => {
+        const img = canvas.toDataURL('image/png');
+        const pdf = new jspdf.jsPDF();
+        pdf.addImage(img, 'PNG', 10, 10, 190, 0);
+        pdf.save(`${userInfo.id}_${userInfo.name}_님의 전공학과 월드컵 결과.pdf`);
+      });
+    }
+
+    function repeatRound() {
+      currentRound++;
+      startCategory(selectedCategory);
+    }
+
+    function showLoading(name) {
+      document.getElementById('roundLoading').style.display = 'block';
+      document.getElementById('roundText').innerText = `${name} 로딩중...`;
+    }
+
+    function hideLoading() {
+      document.getElementById('roundLoading').style.display = 'none';
+    }
+
+    // ✅ 오른쪽 클릭 방지
+    document.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+    });
+    
+  </script>
 </body>
 </html>
