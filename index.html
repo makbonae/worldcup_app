@@ -1,4 +1,4 @@
-/ver2015-02
+/ver2015-03
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -195,7 +195,7 @@
       // ✅ 시작 라운드 이름 지정
       let startRoundName = '64강';
       if (table === 'inmun2024') startRoundName = '32강';
-      showLoading(startRoundName);showLoading('64강');
+      showLoading(startRoundName);
 
       let { data, error } = await supabaseClient.from(table).select('*');
       if (error) return alert('데이터 불러오기 실패');
@@ -254,19 +254,19 @@
         container.innerHTML = '';
         
         if (index >= pairs.length) {
-          // ✅ 라운드 이름 계산 로직 개선
-          let nextRoundName = '';
-          const count = nextRound.length;
+          let nextRoundName;
+          if (index >= pairs.length) {
+            let nextRoundName;
 
-          if (count === 1) {
-            nextRoundName = '최종 선택 결과';
-          } else if (count === 2) {
-            nextRoundName = '결승';
-          } else if ([4, 8, 16, 32, 64].includes(count)) {
-            nextRoundName = `${count}강`;
-          } else {
-            nextRoundName = `${count}강`; // 예외 처리
-          }
+            if (nextRound.length === 1) {
+              nextRoundName = '최종 선택 결과 ';  // ✅ 먼저 검사
+            } else if (nextRound.length === 2) {
+              nextRoundName = '결승'; // ✅ 2강이 아니라 결승으로 표기
+            } else if (nextRound.length === 28 && roundData.autoPass) {
+              nextRoundName = '32강';
+            } else {
+              nextRoundName = `${nextRound.length}강`;
+            }
 
           showLoading(nextRoundName);
           setTimeout(() => {
