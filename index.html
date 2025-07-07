@@ -1,4 +1,4 @@
-/ver2015-03
+/ver2015-04
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -236,7 +236,6 @@
 
       if (pairs.length === 28 && roundData.autoPass) {
         pairs = [...pairs, ...roundData.autoPass];
-        delete roundData.autoPass;
       }
 
       if (pairs.length === 1) {
@@ -252,22 +251,23 @@
 
       function nextPair() {
         container.innerHTML = '';
-        
-        if (index >= pairs.length) {
-          let nextRoundName;
-          if (index >= pairs.length) {
-            let nextRoundName;
 
-            if (nextRound.length === 1) {
-              nextRoundName = '최종 선택 결과 ';  // ✅ 먼저 검사
-            } else if (nextRound.length === 2) {
-              nextRoundName = '결승'; // ✅ 2강이 아니라 결승으로 표기
-            } else if (nextRound.length === 28 && roundData.autoPass) {
-              nextRoundName = '32강';
-            } else {
-              nextRoundName = `${nextRound.length}강`;
-            }
+        if (index >= pairs.length) {
+          const count = nextRound.length;
+          let nextRoundName = '';
+
+          if (count === 1) {
+            nextRoundName = '최종 선택 결과';
+          } else if (count === 2) {
+          nextRoundName = '결승';
+          } else if (count === 28 && roundData.autoPass) {
+            nextRoundName = '32강';
+          } else if ([4, 8, 16, 32, 64].includes(count)) {
+            nextRoundName = `${count}강`;
+          } else {
+            nextRoundName = `${count}개 남음`;
           }
+
           showLoading(nextRoundName);
           setTimeout(() => {
             hideLoading();
@@ -275,7 +275,7 @@
           }, 2000);
           return;
         }
-        
+
         const card1 = pairs[index];
         const card2 = pairs[index + 1];
         const cardA = createCard(card1);
@@ -287,7 +287,6 @@
         wrapper.appendChild(cardB);
         container.appendChild(wrapper);
 
-        // ✅ 세로 길이만 동기화 (가로는 40% 고정)
         setTimeout(() => {
           const heightA = cardA.offsetHeight;
           const heightB = cardB.offsetHeight;
@@ -299,6 +298,7 @@
         cardA.onclick = () => { nextRound.push(card1); index += 2; nextPair(); };
         cardB.onclick = () => { nextRound.push(card2); index += 2; nextPair(); };
       }
+
       nextPair();
     }
 
